@@ -33,7 +33,7 @@ fn main() -> ! {
         let gpiod = p.GPIOG.split();
 
         // (Re-)configure PG13 (green LED) as output
-        let mut led = gpiod.pg14.into_push_pull_output();
+        let mut led = gpiod.pg13.into_push_pull_output();
 
         // Constrain clock registers
         let mut rcc = p.RCC.constrain();
