@@ -42,15 +42,13 @@ fn main() -> ! {
             led.set_high();
 
             // Delay twice for half a second due to limited timer resolution
-            delay.delay_ms(500_u16);
-            delay.delay_ms(500_u16);
+            delay.delay_ms(1000_u32);
 
             // Turn LED off
             led.set_low();
 
             // Delay twice for half a second due to limited timer resolution
-            delay.delay_ms(500_u16);
-            delay.delay_ms(500_u16);
+            delay.delay_ms(1000_u32);
         }
     }
 
