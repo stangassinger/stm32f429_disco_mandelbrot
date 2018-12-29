@@ -78,6 +78,19 @@ fn main() -> ! {
     let gpiod = p.GPIOD.split();
     let gpioe = p.GPIOE.split();
 
+    // LCD enable: set it low first to avoid LCD bleed fl setting up timings
+    let mut disp_on = gpioa.pa8.into_push_pull_output();
+    disp_on.set_low();
+
+    // LCD backlight enable
+    let mut backlight = gpiod.pd12.into_push_pull_output();
+    backlight.set_high();
+
+    // Output pin connected to Boot0 + capacitor
+    let mut bootpin = gpiob.pb7.into_push_pull_output();
+    bootpin.set_low();
+
+
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);
 
