@@ -71,6 +71,12 @@ fn main() -> ! {
                         .pclk2(MegaHertz(84));
         let clocks = rcc.cfgr.freeze();
 
+// Set up pins
+    let gpioa = p.GPIOA.split();
+    let gpiob = p.GPIOB.split();
+    let gpioc = p.GPIOC.split();
+    let gpiod = p.GPIOD.split();
+    let gpioe = p.GPIOE.split();
 
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);
