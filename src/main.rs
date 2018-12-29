@@ -18,6 +18,7 @@ use board::hal::delay::Delay;
 use board::hal::prelude::*;
 use board::hal::stm32;
 use board::hal::time::*;
+use board::hal::gpio::Speed;
 
 use cortex_m::peripheral::Peripherals;
 
@@ -76,7 +77,7 @@ fn main() -> ! {
     let gpiob = p.GPIOB.split();
     let gpioc = p.GPIOC.split();
     let gpiod = p.GPIOD.split();
-    let gpioe = p.GPIOE.split();
+    let gpioe = p.GPIOE.split();    
 
     // LCD enable: set it low first to avoid LCD bleed fl setting up timings
     let mut disp_on = gpioa.pa8.into_push_pull_output();
@@ -89,6 +90,31 @@ fn main() -> ! {
     // Output pin connected to Boot0 + capacitor
     let mut bootpin = gpiob.pb7.into_push_pull_output();
     bootpin.set_low();
+
+    // LCD pins
+    gpioa.pa3 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioa.pa4 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioa.pa6 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioa.pa11.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioa.pa12.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpiob.pb0 .into_alternate_af9() .set_speed(Speed::VeryHigh);
+    gpiob.pb1 .into_alternate_af9() .set_speed(Speed::VeryHigh);
+    gpiob.pb8 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpiob.pb9 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpiob.pb10.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpiob.pb11.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioc.pc6 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioc.pc7 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioc.pc10.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpiod.pd3 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpiod.pd6 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpiod.pd10.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioe.pe11.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioe.pe12.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioe.pe13.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioe.pe14.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioe.pe15.into_alternate_af14().set_speed(Speed::VeryHigh);
+
 
 
         // Get delay provider
