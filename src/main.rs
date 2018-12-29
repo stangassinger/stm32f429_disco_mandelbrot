@@ -17,6 +17,7 @@ use cortex_m_rt::entry;
 use board::hal::delay::Delay;
 use board::hal::prelude::*;
 use board::hal::stm32;
+use board::hal::time::*;
 
 use cortex_m::peripheral::Peripherals;
 
@@ -26,13 +27,18 @@ fn main() -> ! {
         let gpiod = p.GPIOG.split();
 
         // (Re-)configure PG13 (green LED) as output
-        let mut led = gpiod.pg13.into_push_pull_output();
+        let mut led = gpiod.pg14.into_push_pull_output();
 
         // Constrain clock registers
         let mut rcc = p.RCC.constrain();
 
-        // Configure clock to 180 MHz (i.e. the maximum) and freeze it
-        let clocks = rcc.cfgr.sysclk(120.mhz()).freeze();
+        // Configure clock to 168 MHz  and freeze it
+        rcc.cfgr = rcc.cfgr.sysclk(MegaHertz(168))
+                        .hclk(MegaHertz(168))
+                        .pclk1(MegaHertz(42))
+                        .pclk2(MegaHertz(84));
+        let clocks = rcc.cfgr.freeze();
+
 
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);
