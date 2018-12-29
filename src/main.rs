@@ -22,6 +22,9 @@ use board::hal::gpio::Speed;
 
 use cortex_m::peripheral::Peripherals;
 
+#[macro_use]
+mod util;
+
 
 // Display
 /// Width and height of visible screen.
@@ -104,7 +107,7 @@ fn main() -> ! {
     gpiob.pb10.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiob.pb11.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioc.pc6 .into_alternate_af14().set_speed(Speed::VeryHigh);
-    gpioc.pc7 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioc.pc7  .into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioc.pc10.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiod.pd3 .into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiod.pd6 .into_alternate_af14().set_speed(Speed::VeryHigh);
@@ -115,7 +118,9 @@ fn main() -> ! {
     gpioe.pe14.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioe.pe15.into_alternate_af14().set_speed(Speed::VeryHigh);
 
-
+// Enable clocks
+    modif!(RCC.apb2enr: ltdcen = true);
+modif!(RCC.ahb1enr: dma2den = true);
 
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);
