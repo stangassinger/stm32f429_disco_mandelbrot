@@ -32,7 +32,7 @@ fn main() -> ! {
         let mut rcc = p.RCC.constrain();
 
         // Configure clock to 180 MHz (i.e. the maximum) and freeze it
-        let clocks = rcc.cfgr.sysclk(180.mhz()).freeze();
+        let clocks = rcc.cfgr.sysclk(120.mhz()).freeze();
 
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);
