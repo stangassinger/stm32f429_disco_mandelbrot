@@ -171,6 +171,7 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
     const CHARW: u16 = 13;
     const CHARH: u16 = 3;
     static CURSORBUF: [u8; CHARW as usize] = [CURSOR_COLOR; CHARW as usize];
+    //static CURSOR_ENABLED: AtomicBool = ATOMIC_BOOL_INIT;
     write!(LTDC.l2whpcr: whstpos = H_WIN_START + 1, whsppos = H_WIN_START + CHARW );
     write!(LTDC.l2wvpcr: wvstpos = V_WIN_START + CHARH, wvsppos = V_WIN_START + CHARH);
     write!(LTDC.l2pfcr: pf = 0b101);  // L-8 without CLUT
@@ -204,12 +205,14 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
         loop {
             // Turn LED on
             led.set_high();
+            blink( &mut true);
 
             // Delay twice for half a second due to limited timer resolution
             delay.delay_ms(1000_u32);
 
             // Turn LED off
             led.set_low();
+            blink( &mut false );
 
             // Delay twice for half a second due to limited timer resolution
             delay.delay_ms(1000_u32);
@@ -219,4 +222,15 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
     loop {
         continue;
     }
+}
+
+
+fn blink(visible: &mut bool) {
+    // Toggle layer2 on next vsync
+    *visible = !*visible;
+    //modif!(LTDC.l2cr: len = bit(CURSOR_ENABLED.load(Ordering::Relaxed) && *visible));
+    write!(LTDC.srcr: vbr = true);
+    // Reset timer
+    modif!(TIM3.sr: uif = false);
+    modif!(TIM3.cr1: cen = true);
 }
