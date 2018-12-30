@@ -22,6 +22,9 @@ use board::hal::gpio::Speed;
 
 use cortex_m::peripheral::Peripherals;
 
+#[macro_use]
+mod util;
+
 
 // Display
 /// Width and height of visible screen.
@@ -106,7 +109,7 @@ fn main() -> ! {
     gpiob.pb10.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiob.pb11.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioc.pc6 .into_alternate_af14().set_speed(Speed::VeryHigh);
-    gpioc.pc7 .into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpioc.pc7  .into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioc.pc10.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiod.pd3 .into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiod.pd6 .into_alternate_af14().set_speed(Speed::VeryHigh);
@@ -122,6 +125,85 @@ fn main() -> ! {
     // until here ok with
     //http://www.lucadavidian.com/2017/10/02/stm32-using-the-ltdc-display-controller/
 
+// Enable clocks
+    modif!(RCC.apb2enr: ltdcen = true);
+modif!(RCC.ahb1enr: dma2den = true);
+write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
+    write!(RCC.dckcfgr: pllsaidivr = 0b10);  // divide by 8
+    // Enable PLLSAI and wait for it
+    modif!(RCC.cr: pllsaion = true);
+    wait_for!(RCC.cr: pllsairdy);
+
+
+        // Basic ChromArt configuration
+    write!(DMA2D.fgpfccr: cm = 0b0101);  // L8 in/out
+
+    // Configure LCD timings
+    write!(LTDC.sscr: hsw = H_SYNCPULSE - 1, vsh = V_SYNCPULSE - 1); // -1 required by STM
+    write!(LTDC.bpcr: ahbp = H_WIN_START, avbp = V_WIN_START);
+    write!(LTDC.awcr: aav = H_WIN_START + H_ACTIVE, aah = V_WIN_START + V_ACTIVE);
+    write!(LTDC.twcr: totalw = H_WIN_START + H_ACTIVE + H_FRONTPORCH,
+           totalh = V_WIN_START + V_ACTIVE + V_FRONTPORCH);
+
+    // Configure layer 1 (main framebuffer)
+
+    // Horizontal and vertical window (coordinates include porches)
+    write!(LTDC.l1whpcr: whstpos = H_WIN_START + 1, whsppos = H_WIN_START + WIDTH);
+    write!(LTDC.l1wvpcr: wvstpos = V_WIN_START + 1, wvsppos = V_WIN_START + HEIGHT);
+    // Pixel format
+    write!(LTDC.l1pfcr: pf = 0b101);  // 8-bit (CLUT enabled below)
+    // Constant alpha value
+    write!(LTDC.l1cacr: consta = 0xFF);
+    // Default color values
+    write!(LTDC.l1dccr: dcalpha = 0, dcred = 0, dcgreen = 0, dcblue = 0);
+    // Blending factors
+    write!(LTDC.l1bfcr: bf1 = 4, bf2 = 5);  // Constant alpha
+    // Color frame buffer start address
+   // write!(LTDC.l1cfbar: cfbadd = FB_CONSOLE.as_ptr() as u32);
+    // Color frame buffer line length (active*bpp + 3), and pitch
+    write!(LTDC.l1cfblr: cfbll = WIDTH + 3, cfbp = WIDTH);
+    // Frame buffer number of lines
+    write!(LTDC.l1cfblnr: cfblnbr = HEIGHT);
+    // Set up 256-color LUT
+  /*  for (i, (r, g, b)) in Console::get_lut_colors().enumerate() {
+        write!(LTDC.l1clutwr: clutadd = i as u8, red = r, green = g, blue = b);
+    }*/
+
+
+
+        // Configure layer 2 (cursor)
+
+    // Initial position: top left character
+    const CURSOR_COLOR: u8 = 127;
+    const CHARW: u16 = 13;
+    const CHARH: u16 = 3;
+    static CURSORBUF: [u8; CHARW as usize] = [CURSOR_COLOR; CHARW as usize];
+    //static CURSOR_ENABLED: AtomicBool = ATOMIC_BOOL_INIT;
+    write!(LTDC.l2whpcr: whstpos = H_WIN_START + 1, whsppos = H_WIN_START + CHARW );
+    write!(LTDC.l2wvpcr: wvstpos = V_WIN_START + CHARH, wvsppos = V_WIN_START + CHARH);
+    write!(LTDC.l2pfcr: pf = 0b101);  // L-8 without CLUT
+    write!(LTDC.l2cacr: consta = 0xFF);
+    write!(LTDC.l2dccr: dcalpha = 0, dcred = 0, dcgreen = 0, dcblue = 0);
+    write!(LTDC.l2bfcr: bf1 = 6, bf2 = 7);  // Constant alpha * Pixel alpha
+    write!(LTDC.l2cfbar: cfbadd = CURSORBUF.as_ptr() as u32);
+    write!(LTDC.l2cfblr: cfbll = CHARW + 3, cfbp = CHARW);
+    write!(LTDC.l2cfblnr: cfblnbr = 1);  // Cursor is one line of 6 pixels
+
+    // Enable layer1, disable layer2 initially
+    modif!(LTDC.l1cr: cluten = true, len = true);
+    modif!(LTDC.l2cr: len = false);
+
+   // Reload config (immediate)
+    write!(LTDC.srcr: imr = true);
+
+    // Dither on, display on
+    modif!(LTDC.gcr: den = true, ltdcen = true);
+
+    // Reload config to show display
+    write!(LTDC.srcr: imr = true);
+
+    // Enable display via GPIO too
+    disp_on.set_high();
 
 
         // Get delay provider
@@ -130,12 +212,14 @@ fn main() -> ! {
         loop {
             // Turn LED on
             led.set_high();
+            blink( &mut true);
 
             // Delay twice for half a second due to limited timer resolution
             delay.delay_ms(1000_u32);
 
             // Turn LED off
             led.set_low();
+            blink( &mut false );
 
             // Delay twice for half a second due to limited timer resolution
             delay.delay_ms(1000_u32);
@@ -145,4 +229,15 @@ fn main() -> ! {
     loop {
         continue;
     }
+}
+
+
+fn blink(visible: &mut bool) {
+    // Toggle layer2 on next vsync
+    *visible = !*visible;
+    //modif!(LTDC.l2cr: len = bit(CURSOR_ENABLED.load(Ordering::Relaxed) && *visible));
+    write!(LTDC.srcr: vbr = true);
+    // Reset timer
+    modif!(TIM3.sr: uif = false);
+    modif!(TIM3.cr1: cen = true);
 }
