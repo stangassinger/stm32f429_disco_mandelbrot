@@ -125,6 +125,8 @@ fn main() -> ! {
     // until here ok with
     //http://www.lucadavidian.com/2017/10/02/stm32-using-the-ltdc-display-controller/
 
+
+/*
 // Enable clocks
     modif!(RCC.apb2enr: ltdcen = true);
 modif!(RCC.ahb1enr: dma2den = true);
@@ -165,9 +167,9 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
     // Frame buffer number of lines
     write!(LTDC.l1cfblnr: cfblnbr = HEIGHT);
     // Set up 256-color LUT
-  /*  for (i, (r, g, b)) in Console::get_lut_colors().enumerate() {
+    for (i, (r, g, b)) in Console::get_lut_colors().enumerate() {
         write!(LTDC.l1clutwr: clutadd = i as u8, red = r, green = g, blue = b);
-    }*/
+    }
 
 
 
@@ -204,7 +206,7 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
 
     // Enable display via GPIO too
     disp_on.set_high();
-
+*/
 
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);
@@ -212,14 +214,14 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
         loop {
             // Turn LED on
             led.set_high();
-            blink( &mut true);
+           // blink( &mut true);
 
             // Delay twice for half a second due to limited timer resolution
             delay.delay_ms(1000_u32);
 
             // Turn LED off
             led.set_low();
-            blink( &mut false );
+           // blink( &mut false );
 
             // Delay twice for half a second due to limited timer resolution
             delay.delay_ms(1000_u32);
