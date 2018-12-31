@@ -56,6 +56,10 @@ const FB_GRAPHICS_SIZE: usize = (WIDTH as usize) * (HEIGHT as usize);
 static mut FB_GRAPHICS: [u8; FB_GRAPHICS_SIZE] = [0; FB_GRAPHICS_SIZE];
 
 
+static mut marker : bool = false;
+
+
+
 
 #[entry]
 fn main() -> ! {
@@ -230,14 +234,24 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
            // blink( &mut true);
 
             // Delay twice for half a second due to limited timer resolution
-            delay.delay_ms(1000_u32);
+            delay.delay_ms(100_u32);
 
             // Turn LED off
             led_green.set_low();
            // blink( &mut false );
 
             // Delay twice for half a second due to limited timer resolution
-            delay.delay_ms(1000_u32);
+            delay.delay_ms(100_u32);
+
+unsafe{ 
+            if marker == true{
+                led_red.set_low();
+            } else{
+                led_red.set_high();
+            } 
+       }
+
+
         }
     }
 
@@ -247,16 +261,23 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
 }
 
 
+
+
 board::hal::stm32f4::interrupt!(TIM3, led_blink, state: bool = false);
 
 
 fn led_blink(visible: &mut bool) {
     *visible = !*visible;
+    unsafe{ 
+    marker = !marker;
+    } 
+    /*
     if *visible == true{
         //led_green.set_low();   
+        modif!( )
     } else{
 
-    }   
+    } */  
 
     // Reset timer
     modif!(TIM3.sr: uif = false);
