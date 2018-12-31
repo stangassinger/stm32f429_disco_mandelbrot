@@ -18,6 +18,7 @@ use board::hal::delay::Delay;
 use board::hal::prelude::*;
 use board::hal::stm32;
 use board::hal::time::*;
+use board::hal::timer::{Timer, Event};
 use board::hal::gpio::Speed;
 
 use cortex_m::peripheral::Peripherals;
@@ -79,8 +80,11 @@ fn main() -> ! {
     let gpiof = p.GPIOF.split();   
     let gpiog = p.GPIOG.split();
 
+    // Set up blinking timer
+    let mut led_blink_timer = Timer::tim3(p.TIM3, Hertz(4), clocks);
+
     // (Re-)configure PG13 (green LED) as output
-    let mut led = gpiog.pg14.into_push_pull_output(); 
+    let mut led_green = gpiog.pg13.into_push_pull_output(); 
 
     // LCD enable: set it low first to avoid LCD bleed fl setting up timings
  //   let mut disp_on = gpioa.pa8.into_push_pull_output();
@@ -122,6 +126,14 @@ fn main() -> ! {
     gpiog.pg6.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiog.pg7.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiog.pg11.into_alternate_af14().set_speed(Speed::VeryHigh);
+
+
+
+    // Enable interrupts
+    let mut nvic = cp.NVIC;
+    nvic.enable(board::hal::stm32::Interrupt::TIM3);
+    led_blink_timer.listen(Event::TimeOut);
+
     // until here ok with
     //http://www.lucadavidian.com/2017/10/02/stm32-using-the-ltdc-display-controller/
 
@@ -213,14 +225,14 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
 
         loop {
             // Turn LED on
-            led.set_high();
+            led_green.set_high();
            // blink( &mut true);
 
             // Delay twice for half a second due to limited timer resolution
             delay.delay_ms(1000_u32);
 
             // Turn LED off
-            led.set_low();
+            led_green.set_low();
            // blink( &mut false );
 
             // Delay twice for half a second due to limited timer resolution
@@ -234,7 +246,10 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
 }
 
 
-fn blink(visible: &mut bool) {
+board::hal::stm32f4::interrupt!(TIM3, led_blink, state: bool = false);
+
+
+fn led_blink(visible: &mut bool) {
     // Toggle layer2 on next vsync
     *visible = !*visible;
     //modif!(LTDC.l2cr: len = bit(CURSOR_ENABLED.load(Ordering::Relaxed) && *visible));
