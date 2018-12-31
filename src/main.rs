@@ -57,7 +57,6 @@ static mut FB_GRAPHICS: [u8; FB_GRAPHICS_SIZE] = [0; FB_GRAPHICS_SIZE];
 
 
 
-
 #[entry]
 fn main() -> ! {
     if let (Some(p), Some(cp)) = (stm32::Peripherals::take(), Peripherals::take()) {
@@ -80,11 +79,13 @@ fn main() -> ! {
     let gpiof = p.GPIOF.split();   
     let gpiog = p.GPIOG.split();
 
+
     // Set up blinking timer
     let mut led_blink_timer = Timer::tim3(p.TIM3, Hertz(4), clocks);
 
     // (Re-)configure PG13 (green LED) as output
     let mut led_green = gpiog.pg13.into_push_pull_output(); 
+    let mut led_red   = gpiog.pg14.into_push_pull_output(); 
 
     // LCD enable: set it low first to avoid LCD bleed fl setting up timings
  //   let mut disp_on = gpioa.pa8.into_push_pull_output();
@@ -250,11 +251,10 @@ board::hal::stm32f4::interrupt!(TIM3, led_blink, state: bool = false);
 
 
 fn led_blink(visible: &mut bool) {
-    // Toggle layer2 on next vsync
     *visible = !*visible;
-    //modif!(LTDC.l2cr: len = bit(CURSOR_ENABLED.load(Ordering::Relaxed) && *visible));
-    write!(LTDC.srcr: vbr = true);
-    // Reset timer
-    modif!(TIM3.sr: uif = false);
-    modif!(TIM3.cr1: cen = true);
+    if *visible == true{
+        //led_green.set_low();   
+    } else{
+
+    }   
 }
