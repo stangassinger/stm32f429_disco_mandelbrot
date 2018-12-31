@@ -257,4 +257,8 @@ fn led_blink(visible: &mut bool) {
     } else{
 
     }   
+
+    // Reset timer
+    modif!(TIM3.sr: uif = false);
+    modif!(TIM3.cr1: cen = true);
 }
