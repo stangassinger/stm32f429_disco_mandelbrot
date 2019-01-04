@@ -92,8 +92,8 @@ fn main() -> ! {
     let mut led_red   = gpiog.pg14.into_push_pull_output(); 
 
     // LCD enable: set it low first to avoid LCD bleed fl setting up timings
- //   let mut disp_on = gpioa.pa8.into_push_pull_output();
- //   disp_on.set_low();
+    let mut disp_on = gpioa.pa8.into_push_pull_output();
+    disp_on.set_low();
 
     // LCD backlight enable
  //   let mut backlight = gpiod.pd12.into_push_pull_output();
@@ -143,18 +143,21 @@ fn main() -> ! {
     //http://www.lucadavidian.com/2017/10/02/stm32-using-the-ltdc-display-controller/
 
 
-/*
 // Enable clocks
     modif!(RCC.apb2enr: ltdcen = true);
-modif!(RCC.ahb1enr: dma2den = true);
-write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
+    modif!(RCC.ahb1enr: dma2den = true);
+    // Enable PLLSAI for LTDC
+    //   PLLSAI_VCO Input = HSE_VALUE/PLL_M = 1 Mhz
+    //   PLLSAI_VCO Output = PLLSAI_VCO Input * PLLSAI_N = 216 Mhz (f=100..432 MHz)
+    //   PLLLCDCLK = PLLSAI_VCO Output/PLLSAI_R = 216/3 = 72 Mhz  (r=2..7)
+    //   LTDC clock frequency = PLLLCDCLK / RCC_PLLSAIDivR = 72/8 = 9 Mhz (/2 /4 /8 /16)
+    write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
     write!(RCC.dckcfgr: pllsaidivr = 0b10);  // divide by 8
     // Enable PLLSAI and wait for it
     modif!(RCC.cr: pllsaion = true);
     wait_for!(RCC.cr: pllsairdy);
 
-
-        // Basic ChromArt configuration
+    // Basic ChromArt configuration
     write!(DMA2D.fgpfccr: cm = 0b0101);  // L8 in/out
 
     // Configure LCD timings
@@ -178,41 +181,34 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
     // Blending factors
     write!(LTDC.l1bfcr: bf1 = 4, bf2 = 5);  // Constant alpha
     // Color frame buffer start address
-   // write!(LTDC.l1cfbar: cfbadd = FB_CONSOLE.as_ptr() as u32);
+ //   write!(LTDC.l1cfbar: cfbadd = FB_CONSOLE.as_ptr() as u32);
     // Color frame buffer line length (active*bpp + 3), and pitch
     write!(LTDC.l1cfblr: cfbll = WIDTH + 3, cfbp = WIDTH);
     // Frame buffer number of lines
     write!(LTDC.l1cfblnr: cfblnbr = HEIGHT);
     // Set up 256-color LUT
-    for (i, (r, g, b)) in Console::get_lut_colors().enumerate() {
+ /*   for (i, (r, g, b)) in Console::get_lut_colors().enumerate() {
         write!(LTDC.l1clutwr: clutadd = i as u8, red = r, green = g, blue = b);
-    }
+    }*/
 
-
-
-        // Configure layer 2 (cursor)
+    // Configure layer 2 (cursor)
 
     // Initial position: top left character
-    const CURSOR_COLOR: u8 = 127;
-    const CHARW: u16 = 13;
-    const CHARH: u16 = 3;
-    static CURSORBUF: [u8; CHARW as usize] = [CURSOR_COLOR; CHARW as usize];
-    //static CURSOR_ENABLED: AtomicBool = ATOMIC_BOOL_INIT;
-    write!(LTDC.l2whpcr: whstpos = H_WIN_START + 1, whsppos = H_WIN_START + CHARW );
-    write!(LTDC.l2wvpcr: wvstpos = V_WIN_START + CHARH, wvsppos = V_WIN_START + CHARH);
+    write!(LTDC.l2whpcr: whstpos = H_WIN_START + 1, whsppos = H_WIN_START );
+    write!(LTDC.l2wvpcr: wvstpos = V_WIN_START, wvsppos = V_WIN_START);
     write!(LTDC.l2pfcr: pf = 0b101);  // L-8 without CLUT
     write!(LTDC.l2cacr: consta = 0xFF);
     write!(LTDC.l2dccr: dcalpha = 0, dcred = 0, dcgreen = 0, dcblue = 0);
     write!(LTDC.l2bfcr: bf1 = 6, bf2 = 7);  // Constant alpha * Pixel alpha
-    write!(LTDC.l2cfbar: cfbadd = CURSORBUF.as_ptr() as u32);
-    write!(LTDC.l2cfblr: cfbll = CHARW + 3, cfbp = CHARW);
+//    write!(LTDC.l2cfbar: cfbadd = CURSORBUF.as_ptr() as u32);
+    write!(LTDC.l2cfblr: cfbll =  3, cfbp = 3);
     write!(LTDC.l2cfblnr: cfblnbr = 1);  // Cursor is one line of 6 pixels
 
     // Enable layer1, disable layer2 initially
     modif!(LTDC.l1cr: cluten = true, len = true);
     modif!(LTDC.l2cr: len = false);
 
-   // Reload config (immediate)
+    // Reload config (immediate)
     write!(LTDC.srcr: imr = true);
 
     // Dither on, display on
@@ -223,8 +219,6 @@ write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
 
     // Enable display via GPIO too
     disp_on.set_high();
-*/
-
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);
 
