@@ -115,9 +115,6 @@ fn main() -> ! {
     let mut led_green = gpiog.pg13.into_push_pull_output(); 
     let mut led_red   = gpiog.pg14.into_push_pull_output(); 
 
-    // LCD enable: set it low first to avoid LCD bleed fl setting up timings
-    let mut disp_on = gpioa.pa8.into_push_pull_output();
-    disp_on.set_low();
 
     // LCD backlight enable
  //   let mut backlight = gpiod.pd12.into_push_pull_output();
@@ -223,6 +220,27 @@ fn main() -> ! {
  /*   for (i, (r, g, b)) in Console::get_lut_colors().enumerate() {
         write!(LTDC.l1clutwr: clutadd = i as u8, red = r, green = g, blue = b);
     }*/
+   // Set up 256-color ANSI LUT
+    for v in 0..16 {
+        let b = (v & 1 != 0) as u8;
+        let g = (v & 2 != 0) as u8;
+        let r = (v & 4 != 0) as u8;
+        let i = (v & 8 != 0) as u8;
+        write!(LTDC.l1clutwr: clutadd = v,
+               red = 0x55*(r<<1 | i), green = 0x55*(g<<1 | i), blue = 0x55*(b<<1 | i));
+    }
+    for r in 0..6 {
+        for g in 0..6 {
+            for b in 0..6 {
+                write!(LTDC.l1clutwr: clutadd = 16 + 36*b + 6*g + r,
+                       red = 0x33*r, green = 0x33*g, blue = 0x33*b);
+            }
+        }
+    }
+    for i in 0..24 {
+        write!(LTDC.l1clutwr: clutadd = 232+i, red = 8+10*i, green = 8+10*i, blue = 8+10*i);
+    }
+
 
     // Configure layer 2 (cursor)
 
@@ -233,9 +251,9 @@ fn main() -> ! {
     write!(LTDC.l2cacr: consta = 0xFF);
     write!(LTDC.l2dccr: dcalpha = 0, dcred = 0, dcgreen = 0, dcblue = 0);
     write!(LTDC.l2bfcr: bf1 = 6, bf2 = 7);  // Constant alpha * Pixel alpha
-//    write!(LTDC.l2cfbar: cfbadd = CURSORBUF.as_ptr() as u32);
+    write!(LTDC.l2cfbar: cfbadd = CURSORBUF.as_ptr() as u32);
     write!(LTDC.l2cfblr: cfbll =  3, cfbp = 3);
-    write!(LTDC.l2cfblnr: cfblnbr = 1);  // Cursor is one line of 6 pixels
+    write!(LTDC.l2cfblnr: cfblnbr = 6);  // Cursor is one line of 6 pixels
 
     // Enable layer1, disable layer2 initially
     modif!(LTDC.l1cr: cluten = true, len = true);
@@ -250,8 +268,20 @@ fn main() -> ! {
     // Reload config to show display
     write!(LTDC.srcr: imr = true);
 
-    // Enable display via GPIO too
-    disp_on.set_high();
+
+    // Initialize LCD controller
+    cs.set_high();
+    spi_cmd!(display_spi, time, cs, ds, ILI9341_RESET);
+    time.delay_ms(5u16);
+    spi_cmd!(display_spi, time, cs, ds, ILI9341_MAC, 0xC0);
+    spi_cmd!(display_spi, time, cs, ds, ILI9341_RGB_INTERFACE, 0xC2);
+    spi_cmd!(display_spi, time, cs, ds, ILI9341_INTERFACE, 0x01, 0x00, 0x06);
+    spi_cmd!(display_spi, time, cs, ds, ILI9341_SLEEP_OUT);
+    time.delay_ms(60u16);
+    spi_cmd!(display_spi, time, cs, ds, ILI9341_DISPLAY_ON);
+
+
+
         // Get delay provider
         let mut delay = Delay::new(cp.SYST, clocks);
 
