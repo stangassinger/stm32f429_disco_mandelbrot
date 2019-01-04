@@ -185,6 +185,7 @@ fn main() -> ! {
     // Enable interrupts
     let mut nvic = cp.NVIC;
     nvic.enable(board::hal::stm32::Interrupt::TIM3);
+    nvic.enable(board::hal::stm32::Interrupt::USART3);
     led_blink_timer.listen(Event::TimeOut);
 
     // until here ok with
