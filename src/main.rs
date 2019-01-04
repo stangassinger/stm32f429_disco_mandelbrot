@@ -25,9 +25,19 @@ use board::hal::spi::Spi;
 use cortex_m::peripheral::Peripherals;
 
 use arraydeque::ArrayDeque;
+use board::nb::block;
+
 
 #[macro_use]
 mod util;
+
+const ILI9341_RESET: u8 = 0x01;
+const ILI9341_SLEEP_OUT: u8 = 0x11;
+const ILI9341_DISPLAY_ON: u8 = 0x29;
+const ILI9341_MAC: u8 = 0x36;
+// const ILI9341_PIXEL_FORMAT: u8 = 0x3A;
+const ILI9341_RGB_INTERFACE: u8 = 0xB0;
+const ILI9341_INTERFACE: u8 = 0xF6;
 
 
 // Display
@@ -269,21 +279,25 @@ fn main() -> ! {
     write!(LTDC.srcr: imr = true);
 
 
+
+       // Get delay provider
+        let mut delay = Delay::new(cp.SYST, clocks);
+
+        
     // Initialize LCD controller
     cs.set_high();
-    spi_cmd!(display_spi, time, cs, ds, ILI9341_RESET);
-    time.delay_ms(5u16);
-    spi_cmd!(display_spi, time, cs, ds, ILI9341_MAC, 0xC0);
-    spi_cmd!(display_spi, time, cs, ds, ILI9341_RGB_INTERFACE, 0xC2);
-    spi_cmd!(display_spi, time, cs, ds, ILI9341_INTERFACE, 0x01, 0x00, 0x06);
-    spi_cmd!(display_spi, time, cs, ds, ILI9341_SLEEP_OUT);
-    time.delay_ms(60u16);
-    spi_cmd!(display_spi, time, cs, ds, ILI9341_DISPLAY_ON);
+    spi_cmd!(display_spi, delay, cs, ds, ILI9341_RESET);
+    delay.delay_ms(5u16);
+    spi_cmd!(display_spi, delay, cs, ds, ILI9341_MAC, 0xC0);
+    spi_cmd!(display_spi, delay, cs, ds, ILI9341_RGB_INTERFACE, 0xC2);
+    spi_cmd!(display_spi, delay, cs, ds, ILI9341_INTERFACE, 0x01, 0x00, 0x06);
+    spi_cmd!(display_spi, delay, cs, ds, ILI9341_SLEEP_OUT);
+    delay.delay_ms(60u16);
+    spi_cmd!(display_spi, delay, cs, ds, ILI9341_DISPLAY_ON);
 
 
 
-        // Get delay provider
-        let mut delay = Delay::new(cp.SYST, clocks);
+ 
 
         loop {
             // Turn LED on
