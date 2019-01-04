@@ -20,6 +20,7 @@ cortex-m = "0.5.8"
 cortex-m-rt = "0.6.7"
 panic-halt = "0.2.0"
 stm32f429i-disc = "0.1.2"
+arraydeque = { version = "0.4", default-features = false }
 
 
 

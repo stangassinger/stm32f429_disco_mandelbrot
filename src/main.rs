@@ -11,7 +11,7 @@ extern crate cortex_m_rt;
 extern crate panic_halt;
 
 extern crate stm32f429i_disc as board;
-
+extern crate arraydeque;
 use cortex_m_rt::entry;
 
 use board::hal::delay::Delay;
@@ -20,8 +20,11 @@ use board::hal::stm32;
 use board::hal::time::*;
 use board::hal::timer::{Timer, Event};
 use board::hal::gpio::Speed;
+use board::hal::spi::Spi;
 
 use cortex_m::peripheral::Peripherals;
+
+use arraydeque::ArrayDeque;
 
 #[macro_use]
 mod util;
@@ -49,11 +52,22 @@ const V_FRONTPORCH: u16 = 4;
 const H_WIN_START:  u16 = H_SYNCPULSE + H_BACKPORCH - 1;
 const V_WIN_START:  u16 = V_SYNCPULSE + V_BACKPORCH - 1;
 
-// Graphics framebuffer
-const FB_GRAPHICS_SIZE: usize = (WIDTH as usize) * (HEIGHT as usize);
 
-#[link_section = ".sram1bss"]
-static mut FB_GRAPHICS: [u8; FB_GRAPHICS_SIZE] = [0; FB_GRAPHICS_SIZE];
+const COLS: u16 = 53;
+const ROWS: u16 = 24;
+const CHARH: u16 = 10;
+const CHARW: u16 = 6;
+const DEFAULT_COLOR: u8 = 7;
+const DEFAULT_BKGRD: u8 = 0;
+
+
+// main framebuffer
+static mut FRAMEBUF: [u8; 250*320] = [0; 250*320];
+// cursor framebuffer, just the cursor itself
+static CURSORBUF: [u8; 6] = [127; 6];
+
+// TX receive buffer
+static mut RXBUF: Option<ArrayDeque<[u8; 256]>> = None;
 
 
 static mut marker : bool = false;
@@ -83,6 +97,16 @@ fn main() -> ! {
     let gpiof = p.GPIOF.split();   
     let gpiog = p.GPIOG.split();
 
+    // LCD SPI
+    let mut cs = gpioc.pc2.into_push_pull_output();
+    let mut ds = gpiod.pd13.into_push_pull_output();
+    let sclk = gpiof.pf7.into_alternate_af5();
+    let miso = gpiof.pf8.into_alternate_af5();
+    let mosi = gpiof.pf9.into_alternate_af5();
+    let mut display_spi = Spi::spi5( p.SPI5, (sclk, miso, mosi),
+                                    embedded_hal::spi::MODE_0,
+                                    Hertz(1_000_000), clocks);    
+
 
     // Set up blinking timer
     let mut led_blink_timer = Timer::tim3(p.TIM3, Hertz(4), clocks);
@@ -111,8 +135,6 @@ fn main() -> ! {
     gpioa.pa12.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiob.pb0 .into_alternate_af9() .set_speed(Speed::VeryHigh);
     gpiob.pb1 .into_alternate_af9() .set_speed(Speed::VeryHigh);
-    gpiog.pg10.into_alternate_af9().set_speed(Speed::VeryHigh);
-    gpiog.pg12.into_alternate_af9().set_speed(Speed::VeryHigh);
     gpiob.pb8 .into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiob.pb9 .into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiob.pb10.into_alternate_af14().set_speed(Speed::VeryHigh);
@@ -122,15 +144,17 @@ fn main() -> ! {
     gpioc.pc10.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiod.pd3 .into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiod.pd6 .into_alternate_af14().set_speed(Speed::VeryHigh);
-    gpioe.pe11.into_alternate_af14().set_speed(Speed::VeryHigh);
+/*    gpioe.pe11.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioe.pe12.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioe.pe13.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioe.pe14.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpioe.pe15.into_alternate_af14().set_speed(Speed::VeryHigh);
-    gpiof.pf10.into_alternate_af14().set_speed(Speed::VeryHigh);
+  */  gpiof.pf10.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiog.pg6.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiog.pg7.into_alternate_af14().set_speed(Speed::VeryHigh);
     gpiog.pg11.into_alternate_af14().set_speed(Speed::VeryHigh);
+    gpiog.pg10.into_alternate_af9().set_speed(Speed::VeryHigh);
+    gpiog.pg12.into_alternate_af9().set_speed(Speed::VeryHigh);
 
 
 
@@ -151,14 +175,23 @@ fn main() -> ! {
     //   PLLSAI_VCO Output = PLLSAI_VCO Input * PLLSAI_N = 216 Mhz (f=100..432 MHz)
     //   PLLLCDCLK = PLLSAI_VCO Output/PLLSAI_R = 216/3 = 72 Mhz  (r=2..7)
     //   LTDC clock frequency = PLLLCDCLK / RCC_PLLSAIDivR = 72/8 = 9 Mhz (/2 /4 /8 /16)
-    write!(RCC.pllsaicfgr: pllsain = 216, pllsaiq = 7, pllsair = 3);
-    write!(RCC.dckcfgr: pllsaidivr = 0b10);  // divide by 8
+    write!(RCC.pllsaicfgr: pllsain = 192, pllsaiq = 7, pllsair = 3);
+    write!(RCC.dckcfgr: pllsaidivr = 0b01);  // divide by 4
     // Enable PLLSAI and wait for it
     modif!(RCC.cr: pllsaion = true);
     wait_for!(RCC.cr: pllsairdy);
 
     // Basic ChromArt configuration
     write!(DMA2D.fgpfccr: cm = 0b0101);  // L8 in/out
+    write!(DMA2D.opfccr:  cm = 0b0101);
+
+    // for scrolling up one line
+    write!(DMA2D.fgmar: ma = FRAMEBUF.as_ptr().offset(CHARH as isize) as u32);
+    write!(DMA2D.fgor: lo = CHARH);
+    write!(DMA2D.omar: ma = FRAMEBUF.as_ptr() as u32);
+    write!(DMA2D.oor: lo = CHARH);
+    write!(DMA2D.nlr: pl = HEIGHT as u16, nl = WIDTH as u16);
+
 
     // Configure LCD timings
     write!(LTDC.sscr: hsw = H_SYNCPULSE - 1, vsh = V_SYNCPULSE - 1); // -1 required by STM
@@ -181,7 +214,7 @@ fn main() -> ! {
     // Blending factors
     write!(LTDC.l1bfcr: bf1 = 4, bf2 = 5);  // Constant alpha
     // Color frame buffer start address
- //   write!(LTDC.l1cfbar: cfbadd = FB_CONSOLE.as_ptr() as u32);
+    write!(LTDC.l1cfbar: cfbadd = FRAMEBUF.as_ptr() as u32);
     // Color frame buffer line length (active*bpp + 3), and pitch
     write!(LTDC.l1cfblr: cfbll = WIDTH + 3, cfbp = WIDTH);
     // Frame buffer number of lines
