@@ -22,6 +22,7 @@ use board::hal::time::*;
 use board::hal::timer::{Timer, Event};
 use board::hal::gpio::Speed;
 use board::hal::spi::Spi;
+use board::hal::serial::{Serial, config::Config as SerialConfig};
 
 use cortex_m::peripheral::Peripherals;
 
@@ -139,6 +140,16 @@ fn main() -> ! {
     // Output pin connected to Boot0 + capacitor
  //   let mut bootpin = gpiob.pb7.into_push_pull_output();
   //  bootpin.set_low();
+
+
+  // Console UART (UART #3)
+    let utx = gpiod.pd8 .into_alternate_af7();
+    let urx = gpiod.pd9 .into_alternate_af7();
+    let mut console_uart = Serial::usart3(p.USART3, (utx, urx),
+                                          SerialConfig::default().baudrate(Bps(115200)),
+                                          clocks).unwrap();
+    console_uart.listen(hal::serial::Event::Rxne);
+    let (console_tx, _) = console_uart.split();
 
     // LCD pins
     gpioa.pa3 .into_alternate_af14().set_speed(Speed::VeryHigh);
@@ -312,7 +323,7 @@ fn main() -> ! {
     draw(COLS-3, 1, b'O', 0b1010, 0b1100);
     draw(COLS-2, 1, b'K', 0b1010, 0b1100);
 
- 
+    main_loop(console_tx);
 
         loop {
             // Turn LED on
