@@ -12,6 +12,7 @@ extern crate panic_halt;
 
 extern crate stm32f429i_disc as board;
 extern crate arraydeque;
+extern crate btoi;
 use cortex_m_rt::entry;
 
 use board::hal::delay::Delay;
@@ -26,6 +27,7 @@ use cortex_m::peripheral::Peripherals;
 
 use arraydeque::ArrayDeque;
 use board::nb::block;
+use btoi::btoi;
 
 
 #[macro_use]
@@ -84,7 +86,9 @@ static mut RXBUF: Option<ArrayDeque<[u8; 256]>> = None;
 
 static mut marker : bool = false;
 
-
+fn fifo() -> &'static mut ArrayDeque<[u8; 256]> {
+    unsafe { RXBUF.get_or_insert_with(ArrayDeque::new) }
+}
 
 
 #[entry]
@@ -174,6 +178,11 @@ fn main() -> ! {
 
     // until here ok with
     //http://www.lucadavidian.com/2017/10/02/stm32-using-the-ltdc-display-controller/
+
+// partes taken from 
+//https://github.com/birkenfeld/stm_display_rust/ branch discovery
+//and
+//https://github.com/therealprof/stm32f429i-disc  1eb659f195c4d26f2320c52d37f82f7139605f93
 
 
 // Enable clocks
@@ -338,6 +347,57 @@ unsafe{
 }
 
 
+
+fn process_escape(end: u8, seq: &[u8], cx: &mut u16, cy: &mut u16, color: &mut u8, bkgrd: &mut u8) {
+    let mut args = seq.split(|&v| v == b';').map(|n| btoi(n).unwrap_or(0));
+    match end {
+        b'm' => while let Some(arg) = args.next() {
+            match arg {
+                0  => { *color = DEFAULT_COLOR; *bkgrd = DEFAULT_BKGRD; }
+                1  => { *color |= 0b1000; } // XXX: only for 16colors
+                22 => { *color &= !0b1000; }
+                30...37 => { *color = arg as u8 - 30; }
+                40...47 => { *bkgrd = arg as u8 - 40; }
+                38 => { *color = args.nth(1).unwrap_or(0) as u8; }
+                48 => { *bkgrd = args.nth(1).unwrap_or(0) as u8; }
+                _ => {}
+            }
+        },
+        b'H' | b'f' => {
+            let y = args.next().unwrap_or(1);
+            let x = args.next().unwrap_or(1);
+            *cx = if x > 0 { x-1 } else { 0 };
+            *cy = if y > 0 { y-1 } else { 0 };
+        },
+        b'A' => {
+            let n = args.next().unwrap_or(1).max(1);
+            *cy -= n.min(*cy);
+        },
+        b'B' => {
+            let n = args.next().unwrap_or(1).max(1);
+            *cy += n.min(ROWS - *cy - 1);
+        },
+        b'C' => {
+            let n = args.next().unwrap_or(1).max(1);
+            *cx += n.min(COLS - *cx - 1);
+        },
+        b'D' => {
+            let n = args.next().unwrap_or(1).max(1);
+            *cx -= n.min(*cx);
+        },
+        b'G' => {
+            let x = args.next().unwrap_or(1).max(1);
+            *cx = x-1;
+        }
+        b'J' => {}, // TODO: erase screen
+        b'K' => {}, // TODO: erase line
+        // otherwise, ignore
+        _    => {}
+    }
+}
+
+
+
 fn draw(cx: u16, cy: u16, ch: u8, color: u8, bkgrd: u8) {
     font::FONT[ch as usize].iter().zip(cy*CHARH..(cy+1)*CHARH).for_each(|(charrow, y)| {
         (0..CHARW).for_each(|x| unsafe {
@@ -346,6 +406,79 @@ fn draw(cx: u16, cy: u16, ch: u8, color: u8, bkgrd: u8) {
         });
     });
 }
+
+fn cursor(cx: u16, cy: u16) {
+    write!(LTDC.l2whpcr: whstpos = 30 + 9 + cy*CHARH, whsppos = 30 + 9 + cy*CHARH);
+    write!(LTDC.l2wvpcr: wvstpos = 4 + cx*CHARW, wvsppos = 4 + 6 - 1 + cx*CHARW);
+    // reload on next vsync
+    write!(LTDC.srcr: vbr = true);
+}
+
+
+
+
+fn main_loop(mut console_tx: hal::serial::Tx< board::stm32::USART3>) -> ! {
+    let mut cx = 0;
+    let mut cy = 0;
+    let mut color = DEFAULT_COLOR;
+    let mut bkgrd = DEFAULT_BKGRD;
+    let mut escape = 0;
+    let mut escape_len = 0;
+    let mut escape_seq = [0u8; 36];
+
+    loop {
+        if let Some(ch) = fifo().pop_front() {
+            block!(console_tx.write(ch)).unwrap();
+
+            if escape == 1 {
+                escape_len = 0;
+                escape = if ch == b'[' { 2 } else { 0 };
+                continue;
+            } else if escape == 2 {
+                if (ch >= b'0' && ch <= b'9') || ch == b';' {
+                    escape_seq[escape_len] = ch;
+                    escape_len += 1;
+                    if escape_len == escape_seq.len() {
+                        escape = 0;
+                    }
+                } else {
+                    process_escape(ch, &escape_seq[..escape_len],
+                                   &mut cx, &mut cy, &mut color, &mut bkgrd);
+                    cursor(cx, cy);
+                    escape = 0;
+                }
+                continue;
+            }
+
+            if ch == b'\r' {
+                // do nothing
+            } else if ch == b'\n' {
+                cx = 0;
+                cy += 1;
+                if cy == ROWS {
+                    // scroll one row using DMA
+                    modif!(DMA2D.cr: mode = 0, start = true);
+                    wait_for!(DMA2D.cr: start);
+                    cy -= 1;
+                }
+                cursor(cx, cy);
+            } else if ch == b'\x08' {
+                if cx > 0 {
+                    cx -= 1;
+                    draw(cx, cy, b' ', color, bkgrd);
+                    cursor(cx, cy);
+                }
+            } else if ch == b'\x1b' {
+                escape = 1;
+            } else {
+                draw(cx, cy, ch, color, bkgrd);
+                cx = (cx + 1) % COLS;
+                cursor(cx, cy);
+            }
+        }
+    }
+}
+
 
 
 
