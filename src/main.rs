@@ -30,6 +30,7 @@ use board::nb::block;
 
 #[macro_use]
 mod util;
+mod font;
 
 const ILI9341_RESET: u8 = 0x01;
 const ILI9341_SLEEP_OUT: u8 = 0x11;
@@ -44,6 +45,7 @@ const ILI9341_INTERFACE: u8 = 0xF6;
 /// Width and height of visible screen.
 const WIDTH: u16 = 240;
 const HEIGHT: u16 = 320;
+const PITCH: usize = 250;
 
 
 /// Horizontal display timing.
@@ -281,21 +283,25 @@ fn main() -> ! {
 
 
        // Get delay provider
-        let mut delay = Delay::new(cp.SYST, clocks);
+        let mut timer = Delay::new( cp.SYST, clocks);
 
-        
+
     // Initialize LCD controller
     cs.set_high();
-    spi_cmd!(display_spi, delay, cs, ds, ILI9341_RESET);
-    delay.delay_ms(5u16);
-    spi_cmd!(display_spi, delay, cs, ds, ILI9341_MAC, 0xC0);
-    spi_cmd!(display_spi, delay, cs, ds, ILI9341_RGB_INTERFACE, 0xC2);
-    spi_cmd!(display_spi, delay, cs, ds, ILI9341_INTERFACE, 0x01, 0x00, 0x06);
-    spi_cmd!(display_spi, delay, cs, ds, ILI9341_SLEEP_OUT);
-    delay.delay_ms(60u16);
-    spi_cmd!(display_spi, delay, cs, ds, ILI9341_DISPLAY_ON);
+    spi_cmd!(display_spi, timer, cs, ds, ILI9341_RESET);
+    timer.delay_ms(5u16);
+    spi_cmd!(display_spi, timer, cs, ds, ILI9341_MAC, 0xC0);
+    spi_cmd!(display_spi, timer, cs, ds, ILI9341_RGB_INTERFACE, 0xC2);
+    spi_cmd!(display_spi, timer, cs, ds, ILI9341_INTERFACE, 0x01, 0x00, 0x06);
+    spi_cmd!(display_spi, timer, cs, ds, ILI9341_SLEEP_OUT);
+    timer.delay_ms(60u16);
+    spi_cmd!(display_spi, timer, cs, ds, ILI9341_DISPLAY_ON);
 
 
+
+
+    draw(COLS-3, 1, b'O', 0b1010, 0b1100);
+    draw(COLS-2, 1, b'K', 0b1010, 0b1100);
 
  
 
@@ -305,14 +311,14 @@ fn main() -> ! {
            // blink( &mut true);
 
             // Delay twice for half a second due to limited timer resolution
-            delay.delay_ms(100_u32);
+            timer.delay_ms(100_u32);
 
             // Turn LED off
             led_green.set_low();
            // blink( &mut false );
 
             // Delay twice for half a second due to limited timer resolution
-            delay.delay_ms(100_u32);
+            timer.delay_ms(100_u32);
 
 unsafe{ 
             if marker == true{
@@ -329,6 +335,16 @@ unsafe{
     loop {
         continue;
     }
+}
+
+
+fn draw(cx: u16, cy: u16, ch: u8, color: u8, bkgrd: u8) {
+    font::FONT[ch as usize].iter().zip(cy*CHARH..(cy+1)*CHARH).for_each(|(charrow, y)| {
+        (0..CHARW).for_each(|x| unsafe {
+            FRAMEBUF[(x + cx*CHARW) as usize * PITCH + y as usize] =
+                if charrow & (1 << (CHARW - 1 - x)) != 0 { color } else { bkgrd };
+        });
+    });
 }
 
 
@@ -353,4 +369,16 @@ fn led_blink(visible: &mut bool) {
     // Reset timer
     modif!(TIM3.sr: uif = false);
     modif!(TIM3.cr1: cen = true);
+}
+
+
+
+#[cortex_m_rt::exception]
+fn HardFault(ef: &cortex_m_rt::ExceptionFrame) -> ! {
+    panic!("HardFault at {:#?}", ef);
+}
+
+#[cortex_m_rt::exception]
+fn DefaultHandler(irqn: i16) {
+    panic!("Unhandled exception (IRQn = {})", irqn);
 }
