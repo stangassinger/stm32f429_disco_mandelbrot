@@ -6,8 +6,10 @@ Early stage not working yet!
 Only LED blinking 
 
 Prerequisit:
- rustup target add  thumbv7em-none-eabihf
  rust stable is required 
+ rustup target add  thumbv7em-none-eabihf
+ openocd
+ gdb-multiarch
  
 
 build with:
