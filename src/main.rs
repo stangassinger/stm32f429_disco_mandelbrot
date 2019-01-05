@@ -308,6 +308,7 @@ fn main() -> ! {
 
 
     // Initialize LCD controller
+    /* temporarily comented out
     cs.set_high();
     spi_cmd!(display_spi, timer, cs, ds, ILI9341_RESET);
     timer.delay_ms(5u16);
@@ -324,8 +325,8 @@ fn main() -> ! {
     draw(COLS-3, 1, b'O', 0b1010, 0b1100);
     draw(COLS-2, 1, b'K', 0b1010, 0b1100);
 
-    main_loop(console_tx);
-
+        main_loop(console_tx);
+     temporary commented out */
         loop {
             // Turn LED on
             led_green.set_high();
