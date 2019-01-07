@@ -308,16 +308,16 @@ fn main() -> ! {
 
 
     // Initialize LCD controller
-    /* temporarily comented out
-    cs.set_high();
-    spi_cmd!(display_spi, timer, cs, ds, ILI9341_RESET);
+   
+   
+    ili_cmd!(display_spi, cs, ds, ILI9341_RESET);
     timer.delay_ms(5u16);
-    spi_cmd!(display_spi, timer, cs, ds, ILI9341_MAC, 0xC0);
-    spi_cmd!(display_spi, timer, cs, ds, ILI9341_RGB_INTERFACE, 0xC2);
-    spi_cmd!(display_spi, timer, cs, ds, ILI9341_INTERFACE, 0x01, 0x00, 0x06);
-    spi_cmd!(display_spi, timer, cs, ds, ILI9341_SLEEP_OUT);
+    ili_cmd!(display_spi, cs, ds, ILI9341_MAC, 0xC0);
+    ili_cmd!(display_spi, cs, ds, ILI9341_RGB_INTERFACE, 0xC2);
+    ili_cmd!(display_spi, cs, ds, ILI9341_INTERFACE, 0x01, 0x00, 0x06);
+    ili_cmd!(display_spi, cs, ds, ILI9341_SLEEP_OUT);
     timer.delay_ms(60u16);
-    spi_cmd!(display_spi, timer, cs, ds, ILI9341_DISPLAY_ON);
+    ili_cmd!(display_spi, cs, ds, ILI9341_DISPLAY_ON);
 
 
 
@@ -326,7 +326,7 @@ fn main() -> ! {
     draw(COLS-2, 1, b'K', 0b1010, 0b1100);
 
         main_loop(console_tx);
-     temporary commented out */
+     
         loop {
             // Turn LED on
             led_green.set_high();

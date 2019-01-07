@@ -40,13 +40,6 @@ macro_rules! read {
 }
 
 #[macro_export]
-macro_rules! readb {
-    ($p:ident . $r:ident : $bit:ident) => {
-        unsafe { (*board::hal::stm32::$p::ptr()).$r.read().$bit().bit_is_set() }
-    };
-}
-
-#[macro_export]
 macro_rules! modif {
     ($p:ident . $r:ident : $($tt:tt)+) => {
         unsafe { (*board::hal::stm32::$p::ptr()).$r.modify(|_, w| bitset!(w; $($tt)+)); }
@@ -86,5 +79,25 @@ macro_rules! spi_cmd {
             block!($spi.send($byte)).unwrap();
             $t.delay_us(7u16);
         )+
+    };
+}
+
+
+#[macro_export]
+macro_rules! ili_cmd {
+    ($spi:expr, $cs:expr, $ds:expr, $cmd:expr) => {
+        $cs.set_low();
+        $ds.set_low();
+        $spi.write(&[$cmd]).unwrap();
+        $cs.set_high();
+    };
+    ($spi:expr, $cs:expr, $ds:expr, $cmd:expr, $($data:tt)+) => {
+        $cs.set_low();
+        $ds.set_low();
+        $spi.write(&[$cmd]).unwrap();
+        $ds.set_high();
+        $spi.write(&[$($data)+]).unwrap();
+        $ds.set_low();
+        $cs.set_high();
     };
 }
