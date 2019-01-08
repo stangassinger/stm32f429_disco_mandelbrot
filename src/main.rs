@@ -483,6 +483,8 @@ fn led_blink(visible: &mut bool) {
     } else{
 
     } */  
+    modif!(LTDC.l2cr: len = bit(*visible));
+    write!(LTDC.srcr: vbr = true);
 
     // Reset timer
     modif!(TIM3.sr: uif = false);
