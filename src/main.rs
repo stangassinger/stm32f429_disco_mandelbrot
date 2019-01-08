@@ -183,7 +183,7 @@ fn main() -> ! {
     //   PLLSAI_VCO Output = PLLSAI_VCO Input * PLLSAI_N = 216 Mhz (f=100..432 MHz)
     //   PLLLCDCLK = PLLSAI_VCO Output/PLLSAI_R = 216/3 = 72 Mhz  (r=2..7)
     //   LTDC clock frequency = PLLLCDCLK / RCC_PLLSAIDivR = 72/8 = 9 Mhz (/2 /4 /8 /16)
-    write!(RCC.pllsaicfgr: pllsain = 192, pllsaiq = 7, pllsair = 3);
+    write!(RCC.pllsaicfgr: pllsain = 192, pllsaiq = 7, pllsair = 4);
     write!(RCC.dckcfgr: pllsaidivr = 0b01);  // divide by 4
     // Enable PLLSAI and wait for it
     modif!(RCC.cr: pllsaion = true);
