@@ -296,6 +296,14 @@ fn main() -> ! {
 
     draw(COLS-3, 1, b'O', 0b1010, 0b1100);
     draw(COLS-2, 1, b'K', 0b1010, 0b1100);
+    draw(COLS-20, 10, b'H', 0b1010, 0b1100);
+    draw(COLS-19, 10, b'a', 0b1010, 0b1100);
+    draw(COLS-18, 10, b'l', 0b1010, 0b1100);
+    draw(COLS-17, 10, b'l', 0b1010, 0b1100);
+    draw(COLS-16, 10, b'0', 0b1010, 0b1100);
+    draw(COLS-15, 10, b'B', 0b1010, 0b1100);
+    draw(COLS-14, 10, b'l', 0b1010, 0b1100);
+    draw(COLS-13, 10, b'u', 0b1010, 0b1100);    
 
         main_loop(console_tx);
      
