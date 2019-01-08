@@ -44,37 +44,15 @@ const ILI9341_RGB_INTERFACE: u8 = 0xB0;
 const ILI9341_INTERFACE: u8 = 0xF6;
 
 
-// Display
-/// Width and height of visible screen.
-const WIDTH: u16 = 240;
-const HEIGHT: u16 = 320;
+const WIDTH: usize = 320;
+const HEIGHT: usize = 240;
 const PITCH: usize = 250;
-
-
-/// Horizontal display timing.
-const H_SYNCPULSE:  u16 = 10;
-const H_BACKPORCH:  u16 = 20;
-const H_ACTIVE:     u16 = WIDTH;
-const H_FRONTPORCH: u16 = 10;
-
-/// Vertical display timing.
-const V_SYNCPULSE:  u16 = 2;
-const V_BACKPORCH:  u16 = 2;
-const V_ACTIVE:     u16 = HEIGHT;  
-const V_FRONTPORCH: u16 = 4;
-
-/// Upper-left corner of screen for layer windows.
-const H_WIN_START:  u16 = H_SYNCPULSE + H_BACKPORCH - 1;
-const V_WIN_START:  u16 = V_SYNCPULSE + V_BACKPORCH - 1;
-
-
 const COLS: u16 = 53;
 const ROWS: u16 = 24;
 const CHARH: u16 = 10;
 const CHARW: u16 = 6;
 const DEFAULT_COLOR: u8 = 7;
 const DEFAULT_BKGRD: u8 = 0;
-
 
 // main framebuffer
 static mut FRAMEBUF: [u8; 250*320] = [0; 250*320];
@@ -224,35 +202,31 @@ fn main() -> ! {
 
 
     // Configure LCD timings
-    write!(LTDC.sscr: hsw = H_SYNCPULSE - 1, vsh = V_SYNCPULSE - 1); // -1 required by STM
-    write!(LTDC.bpcr: ahbp = H_WIN_START, avbp = V_WIN_START);
-    write!(LTDC.awcr: aav = H_WIN_START + H_ACTIVE, aah = V_WIN_START + V_ACTIVE);
-    write!(LTDC.twcr: totalw = H_WIN_START + H_ACTIVE + H_FRONTPORCH,
-           totalh = V_WIN_START + V_ACTIVE + V_FRONTPORCH);
+    write!(LTDC.sscr: hsw = 9, vsh = 1);            // Vsync, Hsync
+    write!(LTDC.bpcr: ahbp = 29, avbp = 3);         // Back porch
+    write!(LTDC.awcr: aav = 269, aah = 323);        // Active width
+    write!(LTDC.twcr: totalw = 279, totalh = 327);  // Total width           
 
     // Configure layer 1 (main framebuffer)
 
     // Horizontal and vertical window (coordinates include porches)
-    write!(LTDC.l1whpcr: whstpos = H_WIN_START + 1, whsppos = H_WIN_START + WIDTH);
-    write!(LTDC.l1wvpcr: wvstpos = V_WIN_START + 1, wvsppos = V_WIN_START + HEIGHT);
+    write!(LTDC.l1whpcr: whstpos = 30, whsppos = 269);
+    write!(LTDC.l1wvpcr: wvstpos = 4,  wvsppos = 323);
     // Pixel format
     write!(LTDC.l1pfcr: pf = 0b101);  // 8-bit (CLUT enabled below)
     // Constant alpha value
     write!(LTDC.l1cacr: consta = 0xFF);
     // Default color values
-    write!(LTDC.l1dccr: dcalpha = 0, dcred = 0, dcgreen = 0, dcblue = 0);
+    write!(LTDC.l1dccr:  dcalpha = 0, dcred = 0, dcgreen = 0, dcblue = 0);
     // Blending factors
     write!(LTDC.l1bfcr: bf1 = 4, bf2 = 5);  // Constant alpha
     // Color frame buffer start address
     write!(LTDC.l1cfbar: cfbadd = FRAMEBUF.as_ptr() as u32);
     // Color frame buffer line length (active*bpp + 3), and pitch
-    write!(LTDC.l1cfblr: cfbll = WIDTH + 3, cfbp = WIDTH);
+    write!(LTDC.l1cfblr: cfbll = 240 + 3, cfbp = 250);
     // Frame buffer number of lines
-    write!(LTDC.l1cfblnr: cfblnbr = HEIGHT);
-    // Set up 256-color LUT
- /*   for (i, (r, g, b)) in Console::get_lut_colors().enumerate() {
-        write!(LTDC.l1clutwr: clutadd = i as u8, red = r, green = g, blue = b);
-    }*/
+    write!(LTDC.l1cfblnr: cfblnbr = 320);
+    
    // Set up 256-color ANSI LUT
     for v in 0..16 {
         let b = (v & 1 != 0) as u8;
@@ -278,15 +252,15 @@ fn main() -> ! {
     // Configure layer 2 (cursor)
 
     // Initial position: top left character
-    write!(LTDC.l2whpcr: whstpos = H_WIN_START + 1, whsppos = H_WIN_START );
-    write!(LTDC.l2wvpcr: wvstpos = V_WIN_START, wvsppos = V_WIN_START);
+    write!(LTDC.l2whpcr: whstpos = 30+9, whsppos = 30+9);
+    write!(LTDC.l2wvpcr: wvstpos = 4,  wvsppos = 4+6-1);
     write!(LTDC.l2pfcr: pf = 0b101);  // L-8 without CLUT
     write!(LTDC.l2cacr: consta = 0xFF);
     write!(LTDC.l2dccr: dcalpha = 0, dcred = 0, dcgreen = 0, dcblue = 0);
     write!(LTDC.l2bfcr: bf1 = 6, bf2 = 7);  // Constant alpha * Pixel alpha
     write!(LTDC.l2cfbar: cfbadd = CURSORBUF.as_ptr() as u32);
-    write!(LTDC.l2cfblr: cfbll =  3, cfbp = 3);
-    write!(LTDC.l2cfblnr: cfblnbr = 6);  // Cursor is one line of 6 pixels
+    write!(LTDC.l2cfblr: cfbll = 1 + 3, cfbp = 1);
+    write!(LTDC.l2cfblnr: cfblnbr = 6);
 
     // Enable layer1, disable layer2 initially
     modif!(LTDC.l1cr: cluten = true, len = true);
@@ -307,9 +281,7 @@ fn main() -> ! {
         let mut timer = Delay::new( cp.SYST, clocks);
 
 
-    // Initialize LCD controller
-   
-   
+    // Initialize LCD controller  
     ili_cmd!(display_spi, cs, ds, ILI9341_RESET);
     timer.delay_ms(5u16);
     ili_cmd!(display_spi, cs, ds, ILI9341_MAC, 0xC0);
