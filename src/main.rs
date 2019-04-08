@@ -63,7 +63,7 @@ static CURSORBUF: [u8; 6] = [127; 6];
 static mut RXBUF: Option<ArrayDeque<[u8; 256]>> = None;
 
 
-static mut marker : bool = false;
+static mut MARKER : bool = false;
 
 fn fifo() -> &'static mut ArrayDeque<[u8; 256]> {
     unsafe { RXBUF.get_or_insert_with(ArrayDeque::new) }
@@ -323,7 +323,7 @@ fn main() -> ! {
             timer.delay_ms(100_u32);
 
 unsafe{ 
-            if marker == true{
+            if MARKER == true{
                 led_red.set_low();
             } else{
                 led_red.set_high();
@@ -482,7 +482,7 @@ board::hal::stm32f4::interrupt!(TIM3, led_blink, state: bool = false);
 fn led_blink(visible: &mut bool) {
     *visible = !*visible;
     unsafe{ 
-    marker = !marker;
+    MARKER = !MARKER;
     } 
     /*
     if *visible == true{
