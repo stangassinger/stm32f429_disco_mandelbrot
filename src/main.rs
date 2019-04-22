@@ -1,6 +1,7 @@
 #![no_main]
 #![no_std]
-
+// could try this:
+// http://nercury.github.io/rust/embedded/experiments/2019/01/27/rust-embedded-02-measuring-the-clock.html
 
 pub extern crate stm32f4xx_hal as hal;
 
