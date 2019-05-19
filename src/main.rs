@@ -14,7 +14,13 @@ extern crate panic_halt;
 extern crate stm32f429i_disc as board;
 extern crate arraydeque;
 extern crate btoi;
+extern crate cortex_m_semihosting; //  Debug console functions for ARM Cortex-M3.
 use cortex_m_rt::entry;
+
+
+use core::fmt::Write;  //  Provides writeln() function for debug console output.
+use cortex_m_rt::ExceptionFrame;  //  Stack frame for exception handling.
+use cortex_m_semihosting::hio; //  For displaying messages on the debug console.
 
 use board::hal::delay::Delay;
 use board::hal::prelude::*;
@@ -73,6 +79,8 @@ fn fifo() -> &'static mut ArrayDeque<[u8; 256]> {
 
 #[entry]
 fn main() -> ! {
+        let mut debug_out = hio::hstdout().unwrap();
+writeln!(debug_out, "Hello, world!").unwrap();
     if let (Some(p), Some(cp)) = (stm32::Peripherals::take(), Peripherals::take()) {
         // Constrain clock registers
         let mut rcc = p.RCC.constrain();
@@ -296,7 +304,7 @@ fn main() -> ! {
 
 
     draw(COLS-3, 1, b'O', 0b1010, 0b1100);
-    draw(COLS-2, 1, b'K', 0b1010, 0b1100);
+    draw(COLS-2, 1, b'-', 0b1010, 0b1100);
     draw(COLS-20, 10, b'H', 0b1010, 0b1100);
     draw(COLS-19, 10, b'a', 0b1010, 0b1100);
     draw(COLS-18, 10, b'l', 0b1010, 0b1100);
@@ -304,15 +312,15 @@ fn main() -> ! {
     draw(COLS-16, 10, b'0', 0b1010, 0b1100);
     draw(COLS-15, 10, b'B', 0b1010, 0b1100);
     draw(COLS-14, 10, b'l', 0b1010, 0b1100);
-    draw(COLS-13, 10, b'u', 0b1010, 0b1100);    
+    draw(COLS-13, 10, b'k', 0b1010, 0b1100);    
 
-        main_loop(console_tx);
+    //    main_loop(console_tx);
      
         loop {
             // Turn LED on
             led_green.set_high();
            // blink( &mut true);
-
+writeln!(debug_out, "----> Helloxx!").unwrap();
             // Delay twice for half a second due to limited timer resolution
             timer.delay_ms(100_u32);
 
@@ -321,7 +329,7 @@ fn main() -> ! {
            // blink( &mut false );
 
             // Delay twice for half a second due to limited timer resolution
-            timer.delay_ms(100_u32);
+            timer.delay_ms(101_u32);
 
 unsafe{ 
             if MARKER == true{

@@ -1,0 +1,14 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"rust.mode": "rls",
+		"rust.rls": {
+			"useRustfmt": false
+		},
+		"git.autofetch": true,
+	}
+}

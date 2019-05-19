@@ -35,6 +35,10 @@ default-features = false
 features = ["rt", "stm32f429"]
 version = "0.2.8"
 
+[dependencies.cortex-m-semihosting]
+version = "0.3.0"
+
+
 [dev-dependencies]
 nb = "0.1.1"
 panic-halt = "0.2.0"
