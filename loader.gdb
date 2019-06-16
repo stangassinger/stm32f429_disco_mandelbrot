@@ -9,7 +9,7 @@ set remotetimeout 100000
 target remote :3333
 
 # Disable all messages.
-set verbose off
+set verbose on
 set complaints 0
 set confirm off
 set exec-done-display off

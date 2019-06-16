@@ -16,7 +16,7 @@ extern crate arraydeque;
 extern crate btoi;
 extern crate cortex_m_semihosting; //  Debug console functions for ARM Cortex-M3.
 use cortex_m_rt::entry;
-
+//use cortex_m_semihosting::hprintln;
 
 use core::fmt::Write;  //  Provides writeln() function for debug console output.
 use cortex_m_rt::ExceptionFrame;  //  Stack frame for exception handling.
@@ -79,8 +79,9 @@ fn fifo() -> &'static mut ArrayDeque<[u8; 256]> {
 
 #[entry]
 fn main() -> ! {
-        let mut debug_out = hio::hstdout().unwrap();
-writeln!(debug_out, "Hello, world!").unwrap();
+//        let mut debug_out = hio::hstdout().unwrap();
+//writeln!(debug_out, "Hello, world!").unwrap();
+//hprintln!("Hello, world!").unwrap();
     if let (Some(p), Some(cp)) = (stm32::Peripherals::take(), Peripherals::take()) {
         // Constrain clock registers
         let mut rcc = p.RCC.constrain();
@@ -315,12 +316,13 @@ writeln!(debug_out, "Hello, world!").unwrap();
     draw(COLS-13, 10, b'k', 0b1010, 0b1100);    
 
     //    main_loop(console_tx);
-     
+     let mut a = 0;
         loop {
+            a = a + 1;
             // Turn LED on
             led_green.set_high();
            // blink( &mut true);
-writeln!(debug_out, "----> Helloxx!").unwrap();
+//writeln!(debug_out, "----> Helloxx!").unwrap();
             // Delay twice for half a second due to limited timer resolution
             timer.delay_ms(100_u32);
 

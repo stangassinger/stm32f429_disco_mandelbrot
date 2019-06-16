@@ -12,7 +12,7 @@
                 "command": "c:\\openocd\\bin\\openocd -f interface/stlink-v2.cfg -f target/stm32f1x.cfg",
             },
             "linux": {
-                "command": "openocd -f interface/stlink-v2.cfg -f discovery.cfg",
+                "command": "openocd -f interface/stlink-v2-1.cfg -f discovery.cfg",
             },
             "problemMatcher": []
         },
