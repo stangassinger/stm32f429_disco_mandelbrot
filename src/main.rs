@@ -16,7 +16,6 @@ extern crate arraydeque;
 extern crate btoi;
 extern crate cortex_m_semihosting; //  Debug console functions for ARM Cortex-M3.
 use cortex_m_rt::entry;
-//use cortex_m_semihosting::hprintln;
 
 use core::fmt::Write;  //  Provides writeln() function for debug console output.
 use cortex_m_rt::ExceptionFrame;  //  Stack frame for exception handling.
@@ -327,7 +326,7 @@ fn main() -> ! {
             // Turn LED on
             led_green.set_high();
            // blink( &mut true);
-//writeln!(debug_out, "----> Helloxx!").unwrap();
+
             // Delay twice for half a second due to limited timer resolution
             timer.delay_ms(100_u32);
 
