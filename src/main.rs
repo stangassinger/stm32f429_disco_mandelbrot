@@ -315,7 +315,12 @@ fn main() -> ! {
     draw(COLS-14, 10, b'l', 0b1010, 0b1100);
     draw(COLS-13, 10, b'k', 0b1010, 0b1100);    
 
-    //    main_loop(console_tx);
+    
+    
+     // activating display
+     main_loop(console_tx);
+     
+     //does not get here if main_loop is acive
      let mut a = 0;
         loop {
             a = a + 1;
