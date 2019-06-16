@@ -26,18 +26,31 @@ flash with:
 
 
 Debugging:
+
 for debug output:
+
     let mut debug_out = hio::hstdout().unwrap();
+    
     writeln!(debug_out, "Hello, world!").unwrap();
+    
 
 
 Terminal-1
+
 openocd -f discovery.cfg
 
+
 Terminal-2
+
 gdb-multiarch -q target/thumbv7em-none-eabihf/release/mandelbrot
+
 (gdb) target remote :3333
+
 (gdb) monitor arm semihosting on
+
 (gdb) load
+
 (gdb) break main
+
 (gdb) continue
+
