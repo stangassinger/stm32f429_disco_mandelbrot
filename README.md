@@ -54,3 +54,13 @@ gdb-multiarch -q target/thumbv7em-none-eabihf/release/mandelbrot
 
 (gdb) continue
 
+
+#########
+
+For debugging with gdbgui:
+
+install gdbgui (https://ferrous-systems.com/blog/graphical-embedded-rust-debugging )
+
+cargo run
+
+
