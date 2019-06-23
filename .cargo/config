@@ -1,5 +1,5 @@
 [target.thumbv7em-none-eabihf]
-runner = 'gdbgui --gdb-args="-command=loader.gdb"'
+runner = 'gdbgui -g gdb-multiarch --gdb-args="-command=debug.gdb"'
 rustflags = [
   "-C", "link-arg=-Tlink.x",
 ]
