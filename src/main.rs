@@ -2,6 +2,9 @@
 #![no_std]
 // could try this:
 // http://nercury.github.io/rust/embedded/experiments/2019/01/27/rust-embedded-02-measuring-the-clock.html
+// or
+// http://pramode.in/2018/02/20/programming-a-microcontroller-in-rust-at-four-levels-of-abstraction
+
 
 pub extern crate stm32f4xx_hal as hal;
 
