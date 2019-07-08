@@ -138,7 +138,7 @@ fn main() -> ! {
     let mut console_uart = Serial::usart3(p.USART3, (utx, urx),
                                           SerialConfig::default().baudrate(Bps(115200)),
                                           clocks).unwrap();
-    console_uart.listen(hal::serial::Event::Rxne);
+    console_uart.listen( board::serial::Event::Rxne);
     let (console_tx, _) = console_uart.split();
 
     // LCD pins
@@ -428,7 +428,7 @@ fn cursor(cx: u16, cy: u16) {
 
 
 
-fn main_loop(mut console_tx: hal::serial::Tx< board::stm32::USART3>) -> ! {
+fn main_loop(mut console_tx: board::serial::Tx< board::stm32::USART3>) -> ! {
     let mut cx = 0;
     let mut cy = 0;
     let mut color = DEFAULT_COLOR;
@@ -494,7 +494,7 @@ fn main_loop(mut console_tx: hal::serial::Tx< board::stm32::USART3>) -> ! {
 
 
 
-board::hal::stm32f4::interrupt!(TIM3, led_blink, state: bool = false);
+hal::stm32f4::interrupt!(TIM3, led_blink, state: bool = false);
 
 
 fn led_blink(visible: &mut bool) {

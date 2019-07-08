@@ -8,7 +8,7 @@ Prerequisit:
 
  rust stable is required 
  
- rustup update
+ rustup update 1.36.0
  
  rustup target add  thumbv7em-none-eabihf
  
