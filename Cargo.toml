@@ -14,6 +14,7 @@ license = "0BSD"
 name = "mandelbrot"
 repository = "https://github.com/stangassinger/stm32f429_disco_mandelbrot"
 version = "0.0.1"
+edition = "2018"
 
 [dependencies]
 cortex-m = "0.6.0"
