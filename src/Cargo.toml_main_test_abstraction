@@ -1,0 +1,26 @@
+[package]
+name = "mandelbrot"
+description = "bare metal implementation of mandelbrot on stm32f429"
+authors = ["guenther stangassinger <guenther.stangassinger@gmx.de>"]
+license = "0BSD"
+repository = "https://github.com/stangassinger/stm32f429_disco_mandelbrot"
+version = "0.0.1"
+edition = "2018"
+
+[dependencies]
+cortex-m = "0.6.0"
+cortex-m-rt = "0.6.9"
+panic-halt = "0.2.0"
+
+
+[dependencies.cortex-m-semihosting]
+version = "0.3.3"
+
+
+[profile.dev]
+debug = true
+
+[profile.release]
+debug = true
+lto = true
+opt-level = 0
