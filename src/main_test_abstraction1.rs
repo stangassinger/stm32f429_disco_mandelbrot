@@ -1,11 +1,10 @@
 #![no_main]
 #![no_std]
 // https://flowdsp.io/blog/stm32f3-01-interrupts
-extern crate cortex_m;
-extern crate cortex_m_rt;
+
+
 extern crate panic_halt;
 
-use core::ptr;
 
 // working :-) just copy to main.rs and run 
 #[ cortex_m_rt::entry ] 
@@ -18,11 +17,11 @@ fn main() -> ! {
         const GPIOG_BSRR:  u32  = 0x40021818;
  
         //using PG13 PG14 as LED
-        let x = ptr::read_volatile( RCC_AHB1ENR as *mut u32 );      
-        ptr::write_volatile( RCC_AHB1ENR as *mut u32, x | ( 1 << 6 ) );       
-        ptr::write_volatile( GPIOG_MODER as *mut u32, ( 1 << 26) | ( 1 << 28 ));    
-        ptr::write_volatile( GPIOG_BSRR  as *mut u32,   1 << 13 );
-        ptr::write_volatile( GPIOG_BSRR  as *mut u32,   1 << 14 );
+        let x = core::ptr::read_volatile( RCC_AHB1ENR as *mut u32 );      
+        core::ptr::write_volatile( RCC_AHB1ENR as *mut u32, x | ( 1 << 6 ) );       
+        core::ptr::write_volatile( GPIOG_MODER as *mut u32, ( 1 << 26) | ( 1 << 28 ));    
+        core::ptr::write_volatile( GPIOG_BSRR  as *mut u32,   1 << 13 );
+        core::ptr::write_volatile( GPIOG_BSRR  as *mut u32,   1 << 14 );
     } 
 
     loop {}
