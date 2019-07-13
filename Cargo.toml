@@ -16,7 +16,7 @@ repository = "https://github.com/stangassinger/stm32f429_disco_mandelbrot"
 version = "0.0.1"
 
 [dependencies]
-cortex-m = "0.5.8"
+cortex-m = "0.6.0"
 cortex-m-rt = "0.6.7"
 panic-halt = "0.2.0"
 stm32f429i-disc = "0.1.2"
