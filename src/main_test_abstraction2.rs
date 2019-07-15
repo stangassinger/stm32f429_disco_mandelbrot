@@ -1,25 +1,35 @@
 #![no_main]
 #![no_std]
 
-use cortex_m;
-use cortex_m_rt;
-use stm32f4::stm32f429;
-//use panic_halt;
+use stm32ral::{read_reg, write_reg, modify_reg, reset_reg};
+//use stm32ral::{gpio, rcc, tim2, nvic, interrupt};
+use stm32ral::{gpio, rcc };
+extern crate panic_halt;
+
+
+
+fn set_pin_14(gpio: &gpio::RegisterBlock) {
+    write_reg!(gpio, gpio, BSRR, BS14: Set);
+}
 
 
 // working :-) just copy to main.rs and run 
 #[ cortex_m_rt::entry ] 
 fn main() -> ! {
-   let p = cortex_m::Peripherals::take().unwrap();   
-
-    let gpiog = p.GPIOG;
-    let rcc = p.RCC;
-
-    rcc.ahbenr.modify( |r, w| w.iopeen().set_bit() );    
-    gpiog.moder.write( |w| w.moder26().output().moder28().output() );
-    gpiog.bsrr.write( |w| w.bs13().set().bs14().set() );
+  let rcc   = rcc::RCC::take().unwrap();
+  let gpiog = gpio::GPIOG::take().unwrap();
+  
+   modify_reg!(rcc, rcc, AHB1ENR, GPIOGEN: Enabled);
+  
+   modify_reg!(gpio, gpiog, MODER, MODER6: Output, MODER8: 0b01, MODER9: Output);
+  
     
-    loop {}
+   loop {
+        write_reg!(gpio, gpiog, BSRR, BR14: Reset, BR14: Reset);
+        cortex_m::asm::delay(5_000_000);
+        write_reg!(gpio, gpiog, BSRR, BS14: Set, BR14: Reset);
+        cortex_m::asm::delay(5_000_000);
+    }
 }
 
 

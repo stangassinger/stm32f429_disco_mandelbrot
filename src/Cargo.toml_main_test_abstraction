@@ -13,10 +13,15 @@ cortex-m-rt = "0.6.9"
 panic-halt = "0.2.0"
 
 
-[dependencies.stm32f4]
-version = "0.7.1"
-features = ["stm32f429", "rt"]
 
+#[dependencies.stm32f4]
+#version = "0.7.1"
+#features = ["stm32f429", "rt"]
+
+
+[dependencies.stm32ral]
+version = "0.2.0"
+features = ["stm32f429", "rt"]
 
 
 [dependencies.cortex-m-semihosting]
