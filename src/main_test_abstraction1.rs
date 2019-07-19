@@ -2,9 +2,9 @@
 #![no_std]
 // https://flowdsp.io/blog/stm32f3-01-interrupts
 
-extern crate cortex_m;
-extern crate cortex_m_rt;
-extern crate stm32f4;
+use stm32ral::{read_reg, write_reg, modify_reg, reset_reg};
+//use stm32ral::{gpio, rcc, tim2, nvic, interrupt};
+use stm32ral::{gpio, rcc };
 extern crate panic_halt;
 
 

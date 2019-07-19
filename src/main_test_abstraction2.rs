@@ -25,11 +25,13 @@ fn main() -> ! {
   
     
    loop {
-        write_reg!(gpio, gpiog, BSRR, BR13: Reset, BR13: Reset);
-        write_reg!(gpio, gpiog, BSRR, BR14: Reset, BR14: Reset);
+        write_reg!(gpio, gpiog, BSRR, BR13: Reset);
+        write_reg!(gpio, gpiog, BSRR, BR14: Reset);
         cortex_m::asm::delay(5_000_000);
-        write_reg!(gpio, gpiog, BSRR, BS13: Set, BR13: Reset);
-        write_reg!(gpio, gpiog, BSRR, BS14: Set, BR14: Reset);
+        write_reg!(gpio, gpiog, BSRR, BS13: Set);
+        set_pin_14( &gpiog);
+        write_reg!(gpio, gpiog, BSRR, BS13: Set);
+        write_reg!(gpio, gpiog, BSRR, BS14: Set);
         cortex_m::asm::delay(5_000_000);
     }
 }
