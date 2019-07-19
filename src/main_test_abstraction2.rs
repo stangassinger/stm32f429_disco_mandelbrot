@@ -21,12 +21,14 @@ fn main() -> ! {
   
    modify_reg!(rcc, rcc, AHB1ENR, GPIOGEN: Enabled);
   
-   modify_reg!(gpio, gpiog, MODER, MODER6: Output, MODER8: 0b01, MODER9: Output);
+   modify_reg!(gpio, gpiog, MODER, MODER13: Output,  MODER14: Output);
   
     
    loop {
+        write_reg!(gpio, gpiog, BSRR, BR13: Reset, BR13: Reset);
         write_reg!(gpio, gpiog, BSRR, BR14: Reset, BR14: Reset);
         cortex_m::asm::delay(5_000_000);
+        write_reg!(gpio, gpiog, BSRR, BS13: Set, BR13: Reset);
         write_reg!(gpio, gpiog, BSRR, BS14: Set, BR14: Reset);
         cortex_m::asm::delay(5_000_000);
     }
