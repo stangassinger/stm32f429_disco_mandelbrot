@@ -14,7 +14,7 @@ extern crate cortex_m_rt;
 
 extern crate panic_halt;
 
-extern crate stm32f429i_disc as board;
+//extern crate stm32f429i_disc as board;
 extern crate arraydeque;
 extern crate btoi;
 extern crate cortex_m_semihosting; //  Debug console functions for ARM Cortex-M3.
@@ -24,19 +24,19 @@ use core::fmt::Write;  //  Provides writeln() function for debug console output.
 use cortex_m_rt::ExceptionFrame;  //  Stack frame for exception handling.
 use cortex_m_semihosting::hio; //  For displaying messages on the debug console.
 
-use board::hal::delay::Delay;
-use board::hal::prelude::*;
-use board::hal::stm32;
-use board::hal::time::*;
-use board::hal::timer::{Timer, Event};
-use board::hal::gpio::Speed;
-use board::hal::spi::Spi;
-use board::hal::serial::{Serial, config::Config as SerialConfig};
+use hal::delay::Delay;
+use hal::prelude::*;
+use hal::stm32;
+use hal::time::*;
+use hal::timer::{Timer, Event};
+use hal::gpio::Speed;
+use hal::spi::Spi;
+use hal::serial::{Serial, config::Config as SerialConfig};
 
 use cortex_m::peripheral::Peripherals;
 
 use arraydeque::ArrayDeque;
-use board::nb::block;
+use nb::block;
 use btoi::btoi;
 
 
@@ -138,7 +138,7 @@ fn main() -> ! {
     let mut console_uart = Serial::usart3(p.USART3, (utx, urx),
                                           SerialConfig::default().baudrate(Bps(115200)),
                                           clocks).unwrap();
-    console_uart.listen( board::serial::Event::Rxne);
+    console_uart.listen( hal::serial::Event::Rxne);
     let (console_tx, _) = console_uart.split();
 
     // LCD pins
@@ -174,8 +174,8 @@ fn main() -> ! {
 
     // Enable interrupts
     let mut nvic = cp.NVIC;
-    nvic.enable(board::hal::stm32::Interrupt::TIM3);
-    nvic.enable(board::hal::stm32::Interrupt::USART3);
+    nvic.enable( hal::stm32::Interrupt::TIM3);
+    nvic.enable( hal::stm32::Interrupt::USART3);
     led_blink_timer.listen(Event::TimeOut);
 
     // until here ok with
@@ -428,7 +428,7 @@ fn cursor(cx: u16, cy: u16) {
 
 
 
-fn main_loop(mut console_tx: board::serial::Tx< board::stm32::USART3>) -> ! {
+fn main_loop(mut console_tx: hal::serial::Tx< hal::stm32::USART3>) -> ! {
     let mut cx = 0;
     let mut cy = 0;
     let mut color = DEFAULT_COLOR;

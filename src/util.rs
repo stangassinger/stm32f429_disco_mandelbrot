@@ -1,6 +1,6 @@
 //! Utility macros/functions.
-use board::hal::delay::Delay;
-use board::hal::prelude::*;
+use hal::delay::Delay;
+use hal::prelude::*;
 
 pub trait DelayExt {
     fn delay(&mut self, ms: u32);
@@ -28,31 +28,31 @@ macro_rules! bitset {
 #[macro_export]
 macro_rules! write {
     ($p:ident . $r:ident : $($tt:tt)+) => {
-        unsafe { (*board::hal::stm32::$p::ptr()).$r.write(|w| bitset!(w; $($tt)+)); }
+        unsafe { (*hal::stm32::$p::ptr()).$r.write(|w| bitset!(w; $($tt)+)); }
     };
 }
 
 #[macro_export]
 macro_rules! read {
     ($p:ident . $r:ident : $bit:ident) => {
-        unsafe { (*board::hal::stm32::$p::ptr()).$r.read().$bit().bits() }
+        unsafe { (*hal::stm32::$p::ptr()).$r.read().$bit().bits() }
     };
 }
 
 #[macro_export]
 macro_rules! modif {
     ($p:ident . $r:ident : $($tt:tt)+) => {
-        unsafe { (*board::hal::stm32::$p::ptr()).$r.modify(|_, w| bitset!(w; $($tt)+)); }
+        unsafe { (*hal::stm32::$p::ptr()).$r.modify(|_, w| bitset!(w; $($tt)+)); }
     };
 }
 
 #[macro_export]
 macro_rules! wait_for {
     ($p:ident . $r:ident : $bit:ident) => {
-        unsafe { while (*board::hal::stm32::$p::ptr()).$r.read().$bit().bit_is_clear() {} }
+        unsafe { while (*hal::stm32::$p::ptr()).$r.read().$bit().bit_is_clear() {} }
     };
     ($p:ident . $r:ident : ! $bit:ident) => {
-        unsafe { while (*board::hal::stm32::$p::ptr()).$r.read().$bit().bit_is_set() {} }
+        unsafe { while (*hal::stm32::$p::ptr()).$r.read().$bit().bit_is_set() {} }
     };
 }
 

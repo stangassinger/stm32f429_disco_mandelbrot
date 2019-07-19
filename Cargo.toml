@@ -1,26 +1,18 @@
 [package]
-authors = ["guenther stangassinger <guenther.stangassinger@gmx.de>"]
-categories = [
-    "embedded",
-    "no-std",
-]
-description = "bare metal implementation of mandelbrot on stm32f429"
-keywords = [
-    "arm",
-    "cortex-m",
-    "template",
-]
-license = "0BSD"
 name = "mandelbrot"
+description = "bare metal implementation of mandelbrot on stm32f429"
+authors = ["guenther stangassinger <guenther.stangassinger@gmx.de>"]
+license = "0BSD"
 repository = "https://github.com/stangassinger/stm32f429_disco_mandelbrot"
 version = "0.0.1"
 edition = "2018"
 
+
 [dependencies]
 cortex-m = "0.6.0"
-cortex-m-rt = "0.6.7"
+cortex-m-rt = "0.6.9"
 panic-halt = "0.2.0"
-stm32f429i-disc = "0.1.2"
+#stm32f429i-disc = "0.1.2"
 nb = "0.1.1"
 arraydeque = { version = "0.4", default-features = false }
 btoi = { version = "0.4.0", default-features = false }
